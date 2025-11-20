@@ -17,6 +17,8 @@ RUN JAR_FILE=$(find target -maxdepth 1 -name "*.jar" -not -name "original-*.jar"
 FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
 
+EXPOSE 8080
+
 
 COPY --from=builder /app/target/app.jar /app/app.jar
 
