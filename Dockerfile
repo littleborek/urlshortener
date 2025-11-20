@@ -8,10 +8,13 @@ ENV MAVEN_OPTS="-Xmx256m"
 COPY pom.xml .
 RUN mvn dependency:go-offline
 COPY src /app/src
+
 RUN mvn package -DskipTests
 
 
-RUN mv $(find target -maxdepth 1 -name "*.jar" | head -1) target/app.jar
+RUN JAR_FILE=$(find target -maxdepth 1 -name "*.jar" -not -name "original-*.jar" | head -1) && \
+    if [ "$JAR_FILE" != "target/app.jar" ]; then mv "$JAR_FILE" target/app.jar; fi
+
 
 FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
