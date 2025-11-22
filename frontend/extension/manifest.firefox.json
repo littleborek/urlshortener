@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Quick URL Shortener & QR",
+  "name": "Quick URL Shortener",
   "version": "1.0",
-  "description": "Instantly shorten the current tab URL and generate a QR code.",
+  "description": "Shorten URL and generate QR code instantly.",
   "permissions": [
     "activeTab",
     "clipboardWrite"
@@ -14,15 +14,14 @@
     "default_popup": "popup.html",
     "default_icon": {
       "16": "icons/icon16.png",
-      "32": "icons/icon32.png",
       "48": "icons/icon48.png",
       "128": "icons/icon128.png"
     }
   },
-  "icons": {
-    "16": "icons/icon16.png",
-    "32": "icons/icon32.png",
-    "48": "icons/icon48.png",
-    "128": "icons/icon128.png"
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "shortener@berkk.cloud",
+      "strict_min_version": "109.0"
+    }
   }
 }

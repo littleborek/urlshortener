@@ -1,63 +1,89 @@
-document.addEventListener('DOMContentLoaded', async () => {
-    const API_BASE_URL = 'https://edge-shortener-api.onrender.com';
-    const shortenBtn = document.getElementById('shortenBtn');
-    const urlInput = document.getElementById('currentUrl');
-    const resultDiv = document.getElementById('result');
-    const shortUrlInput = document.getElementById('shortUrl');
-    const qrcodeDiv = document.getElementById('qrcode');
-    const message = document.getElementById('message');
+document.addEventListener('DOMContentLoaded', async () => { // ADD 'async' HERE
+    const API_BASE = "https://s.berkk.cloud";
+    
+    // Elements
+    const longUrlInput = document.getElementById('currentUrl');
+    const shortenBtn = document.getElementById('shorten-btn');
+    const resultArea = document.getElementById('result-area');
+    const initialView = document.getElementById('initial-view');
+    const shortUrlInput = document.getElementById('short-url');
+    const qrImage = document.getElementById('qr-image');
+    const copyBtn = document.getElementById('copy-btn');
+    const statusMsg = document.getElementById('status-msg');
 
+    // 1. Get Current Tab URL (FIXED: Using async/await for reliability)
+    try {
+        // Use the promise-based query (works in modern Chrome/Firefox MV3)
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (tab?.url) {
+            longUrlInput.value = tab.url;
+        }
+    } catch (e) {
+        // This catches permission errors or issues getting the tab
+        longUrlInput.value = "Error: Permission denied or URL not supported.";
+        console.error("Failed to get current tab URL:", e);
+    }
 
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    urlInput.value = tab.url;
-
-
+    // 2. Shorten Action
     shortenBtn.addEventListener('click', async () => {
-        try {
-            shortenBtn.disabled = true;
-            shortenBtn.innerText = "İşleniyor...";
-            message.innerText = "";
+        const originalUrl = longUrlInput.value;
 
-            const response = await fetch(`${API_BASE_URL}/api/shorten`, {
+        if (!originalUrl || originalUrl.startsWith("Error:")) return;
+
+        try {
+            setLoading(true);
+
+            const response = await fetch(`${API_BASE}/api/shorten`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'text/plain' },
-                body: tab.url
+                body: originalUrl
             });
 
-            if (!response.ok) throw new Error('API Hatası');
+            if (!response.ok) throw new Error('Network error');
 
             const data = await response.json();
-            const fullShortUrl = `${API_BASE_URL}/r/${data.shortKey}`;
+            const fullShortUrl = `${API_BASE}/${data.shortKey}`; // Make sure API_BASE includes https://
 
- 
-            shortUrlInput.value = fullShortUrl;
-            
-
-            qrcodeDiv.innerHTML = "";
-            new QRCode(qrcodeDiv, {
-                text: fullShortUrl,
-                width: 128,
-                height: 128
-            });
-
-            resultDiv.classList.remove('hidden');
-            document.getElementById('main').classList.add('hidden');
+            showResult(fullShortUrl);
 
         } catch (error) {
             console.error(error);
-            message.innerText = "Hata oluştu. API çalışıyor mu?";
-            message.classList.add("error");
-        } finally {
-            shortenBtn.disabled = false;
-            shortenBtn.innerText = "🚀 Kısalt ve QR Oluştur";
+            statusMsg.textContent = "Error occurred. Please check the URL.";
+            statusMsg.classList.add('error-msg');
+            setLoading(false);
         }
     });
 
-    document.getElementById('copyBtn').addEventListener('click', () => {
+    // 3. Copy Action
+    copyBtn.addEventListener('click', () => {
         shortUrlInput.select();
-        document.execCommand('copy');
-        message.innerText = "Panoya kopyalandı! ✨";
-        message.classList.remove("error");
-        setTimeout(() => message.innerText = "", 2000);
+        navigator.clipboard.writeText(shortUrlInput.value).then(() => {
+            statusMsg.textContent = "Copied to clipboard! ✨";
+            statusMsg.classList.remove('error-msg');
+            setTimeout(() => statusMsg.textContent = "", 2000);
+        }).catch(() => {
+            statusMsg.textContent = "Failed to copy.";
+            statusMsg.classList.add('error-msg');
+        });
     });
+
+    // Helpers
+    function setLoading(isLoading) {
+        if (isLoading) {
+            shortenBtn.textContent = "Processing...";
+            shortenBtn.disabled = true;
+        } else {
+            shortenBtn.textContent = "🚀 Shorten & QR";
+            shortenBtn.disabled = false;
+        }
+    }
+
+    function showResult(url) {
+        initialView.classList.add('hidden');
+        resultArea.classList.remove('hidden');
+        shortUrlInput.value = url;
+        
+        // Generate QR using external API
+        qrImage.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(url)}&bgcolor=ffffff`;
+    }
 });
