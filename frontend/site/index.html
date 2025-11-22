@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>URL Shortener & QR Code</title>
     
-    <link rel="icon" type="image/png" href="icons/icon32.png?v=1.0" sizes="32x32">
-    <link rel="icon" type="image/png" href="icons/icon16.png?v=1.0" sizes="16x16">
-    <link rel="icon" type="image/svg+xml" href="icons/icon.svg?v=1.0"> 
+    <link rel="icon" type="image/png" href="icons/icon32.png?v=1.1" sizes="32x32">
+    <link rel="icon" type="image/png" href="icons/icon16.png?v=1.1" sizes="16x16">
+    <link rel="icon" type="image/svg+xml" href="icons/icon.svg?v=1.1"> 
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -41,6 +41,7 @@
         <div class="text-center mb-10">
             
 
+
             <h1 class="text-5xl font-extrabold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500 tracking-tight">
                 Link Shortener
             </h1>
@@ -51,8 +52,18 @@
             <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 opacity-70"></div>
 
             <form id="shortenForm" class="space-y-5">
+                
                 <div>
-                    <label for="longUrl" id="urlLabel" class="block text-sm font-medium text-gray-300 mb-2 ml-1">Long URL</label>
+                    <div class="flex justify-between items-center mb-2"> 
+                        <label for="longUrl" id="urlLabel" class="text-sm font-medium text-gray-300">
+                            🔗 Long URL
+                        </label>
+                        <button type="button" id="toggleSlugBtn" 
+                            class="text-xs text-blue-400 hover:text-blue-300 font-semibold p-1 transition duration-150">
+                            Custom Slug?
+                        </button>
+                    </div>
+
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                             <svg class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -62,6 +73,19 @@
                         <input type="url" id="longUrl" required 
                             placeholder="https://example.com/very-long-link..." 
                             class="w-full pl-11 pr-4 py-4 bg-gray-900/60 border border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition text-white placeholder-gray-500 shadow-inner">
+                    </div>
+                </div>
+
+                <div id="customSlugContainer" class="space-y-5 hidden pt-1">
+                    <div>
+                        <label for="customSlugInput" class="block text-sm font-medium text-gray-400 mb-2">
+                            Custom Slug (Max 15 characters, alphanumeric)
+                        </label>
+                        <div class="relative">
+                            <input type="text" id="customSlugInput"
+                                maxlength="15"
+                                class="w-full pl-4 pr-4 py-4 bg-gray-900/60 border border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition text-white placeholder-gray-500 shadow-inner">
+                        </div>
                     </div>
                 </div>
                 
@@ -107,8 +131,6 @@
     </footer>
 
     <script>
-        // ... JavaScript kodunuz (değişmedi) ...
-
         const API_BASE_URL = 'https://s.berkk.cloud'; 
         const FRONTEND_URL = "s.berkk.cloud"; 
 
@@ -124,7 +146,8 @@
                 copyMessage: "✨ Copied to clipboard!",
                 qrInfo: "Scan with your phone",
                 errorMsg: "An error occurred. Please check the URL.",
-                langBtn: "TR"
+                langBtn: "TR",
+                slugBtn: "Custom Slug?"
             },
             tr: {
                 subtitle: "Linklerinizi saniyeler içinde kısaltın, QR kodunuzu oluşturun.",
@@ -137,7 +160,8 @@
                 copyMessage: "✨ Panoya kopyalandı!",
                 qrInfo: "Telefonunuzla tarayarak test edin",
                 errorMsg: "Link kısaltılamadı. Lütfen URL'yi kontrol edin.",
-                langBtn: "EN"
+                langBtn: "EN",
+                slugBtn: "Özel Link?"
             }
         };
 
@@ -155,17 +179,18 @@
             document.getElementById('copyBtnText').textContent = t.copyBtnText;
             document.getElementById('copyMessage').textContent = t.copyMessage;
             document.getElementById('qrInfo').textContent = t.qrInfo;
-            
+
+            const isHidden = customSlugContainer.classList.contains('hidden');
+            document.getElementById('toggleSlugBtn').textContent = isHidden ? t.slugBtn : (lang === 'en' ? 'Hide Slug' : 'Linki Gizle');
+
             const nextLang = lang === 'en' ? 'tr' : 'en';
             document.getElementById('currentLangFlag').textContent = nextLang === 'en' ? '🇬🇧' : '🇹🇷';
             document.getElementById('currentLangText').textContent = nextLang.toUpperCase();
         }
-
-        document.getElementById('langBtn').addEventListener('click', () => {
-            const newLang = currentLang === 'en' ? 'tr' : 'en';
-            setLanguage(newLang);
-        });
-
+        
+        const toggleSlugBtn = document.getElementById('toggleSlugBtn');
+        const customSlugContainer = document.getElementById('customSlugContainer');
+        const customSlugInput = document.getElementById('customSlugInput');
         const form = document.getElementById('shortenForm');
         const submitBtn = document.getElementById('submitBtn');
         const loader = document.getElementById('loader');
@@ -173,6 +198,28 @@
         const shortUrlInput = document.getElementById('shortUrlInput');
         const errorMessage = document.getElementById('errorMessage');
         const qrContainer = document.getElementById('qrcode');
+
+
+        toggleSlugBtn.addEventListener('click', () => {
+            customSlugContainer.classList.toggle('hidden');
+            const isHidden = customSlugContainer.classList.contains('hidden');
+            const t = translations[currentLang];
+            
+            if (isHidden) {
+
+                toggleSlugBtn.textContent = t.slugBtn;
+                customSlugInput.value = '';
+            } else {
+                toggleSlugBtn.textContent = (currentLang === 'en' ? 'Hide Slug' : 'Linki Gizle');
+            }
+        });
+
+
+        setLanguage('en'); 
+        document.getElementById('langBtn').addEventListener('click', () => {
+            const newLang = currentLang === 'en' ? 'tr' : 'en';
+            setLanguage(newLang);
+        });
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -185,19 +232,33 @@
 
             const longUrl = document.getElementById('longUrl').value;
 
+            const customSlug = customSlugContainer.classList.contains('hidden') 
+                               ? null 
+                               : (customSlugInput.value.trim() || null); 
+
+            const payload = {
+                longUrl: longUrl,
+                customSlug: customSlug
+            };
+
             try {
                 const response = await fetch(`${API_BASE_URL}/api/shorten`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'text/plain' },
-                    body: longUrl
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify(payload) 
                 });
 
-                if (!response.ok) throw new Error();
+                if (!response.ok) {
+                    const errorText = await response.text();
+
+                    if (response.status === 409) {
+                        throw new Error(errorText || "The custom slug is already in use.");
+                    }
+                    throw new Error(translations[currentLang].errorMsg);
+                }
 
                 const data = await response.json();
-                
-                
-                const fullShortUrl = `https://${FRONTEND_URL}/${data.shortKey}`;
+                const fullShortUrl = `${FRONTEND_URL}/${data.shortKey}`;
                 
                 shortUrlInput.value = fullShortUrl;
                 
@@ -214,7 +275,9 @@
 
             } catch (error) {
                 console.error(error);
-                errorMessage.textContent = translations[currentLang].errorMsg;
+                errorMessage.textContent = error.message.startsWith("API Error") 
+                                         ? error.message 
+                                         : error.message; 
                 errorMessage.classList.remove('hidden');
             } finally {
                 loader.classList.add('hidden');

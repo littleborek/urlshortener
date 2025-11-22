@@ -5,6 +5,7 @@
 
 // Frontend URL for redirection
 const FRONTEND_URL = "https://short.berkk.cloud"; 
+const SHORT_URL = "short.berkk.cloud";
 const SHORT_KEY_LENGTH = 4;
 const ONE_WEEK_TTL = 7 * 24 * 60 * 60; // 604800 seconds
 
