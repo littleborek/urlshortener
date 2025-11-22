@@ -1,0 +1,8 @@
+name = "url-shortener-api"
+main = "worker.js"
+compatibility_date = "2025-11-22"
+
+[[kv_namespaces]]
+binding = "LINKS"
+id = "030380517025497a8e11ad9b441a8059"
+preview_id = "030380517025497a8e11ad9b441a8059"
