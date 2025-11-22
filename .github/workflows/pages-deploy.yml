@@ -1,0 +1,24 @@
+name: Cloudflare Pages Deployment
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'frontend/site/**'
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Publish to Pages
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+        
+      - name: Publish to Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN_PAGES }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: 'url-shortener-frontend'
+          directory: 'frontend/site'
