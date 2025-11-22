@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Shortener & QR Code</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .blob { position: absolute; filter: blur(40px); z-index: -1; opacity: 0.4; animation: float 6s infinite ease-in-out; }
+        @keyframes float {
+            0% { transform: translate(0px, 0px) scale(1); }
+            33% { transform: translate(30px, -50px) scale(1.1); }
+            66% { transform: translate(-20px, 20px) scale(0.9); }
+            100% { transform: translate(0px, 0px) scale(1); }
+        }
+        .fade-in { animation: fadeIn 0.5s ease-out forwards; opacity: 0; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen flex flex-col items-center justify-center relative overflow-hidden selection:bg-blue-500 selection:text-white">
+
+
+    <div class="absolute top-5 right-5 z-20">
+        <button id="langBtn" class="bg-gray-800 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg shadow border border-gray-600 transition flex items-center gap-2">
+            <span id="currentLangFlag">🇬🇧</span> <span id="currentLangText">EN</span>
+        </button>
+    </div>
+
+    <div class="blob bg-purple-600 w-96 h-96 rounded-full top-0 left-0 mix-blend-screen"></div>
+    <div class="blob bg-blue-600 w-96 h-96 rounded-full bottom-0 right-0 mix-blend-screen animation-delay-2000"></div>
+
+    <main class="w-full max-w-xl p-6 z-10">
+        <div class="text-center mb-10">
+            <div class="inline-block p-3 rounded-2xl bg-gray-800/50 backdrop-blur-md mb-4 shadow-lg border border-gray-700">
+                🔗
+            </div>
+            <h1 class="text-5xl font-extrabold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500 tracking-tight">
+                Link Shortener
+            </h1>
+            <p id="subtitle" class="text-gray-400 text-lg font-light">Shorten links, generate QR codes, share instantly.</p>
+        </div>
+
+        <div class="bg-gray-800/40 backdrop-blur-xl p-8 rounded-3xl shadow-2xl border border-gray-700/50 relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 opacity-70"></div>
+
+            <form id="shortenForm" class="space-y-5">
+                <div>
+                    <label for="longUrl" id="urlLabel" class="block text-sm font-medium text-gray-300 mb-2 ml-1">Long URL</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <svg class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                            </svg>
+                        </div>
+                        <input type="url" id="longUrl" required 
+                            placeholder="https://example.com/very-long-link..." 
+                            class="w-full pl-11 pr-4 py-4 bg-gray-900/60 border border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition text-white placeholder-gray-500 shadow-inner">
+                    </div>
+                </div>
+                
+                <button type="submit" id="submitBtn"
+                    class="w-full py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold text-lg rounded-xl shadow-lg shadow-blue-500/20 transform transition hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2">
+                    <span>🚀</span> <span id="btnText">Shorten & Create QR</span>
+                </button>
+            </form>
+
+            <div id="loader" class="hidden flex justify-center py-8">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+            </div>
+
+            <div id="resultArea" class="hidden mt-8 pt-6 border-t border-gray-700 fade-in space-y-6">
+                <div class="space-y-2">
+                    <p id="resultLabel" class="text-sm text-gray-400 ml-1">Your Short Link:</p>
+                    <div class="flex items-center gap-2 bg-gray-900/80 p-2 rounded-xl border border-gray-600 hover:border-gray-500 transition-colors">
+                        <input type="text" id="shortUrlInput" readonly 
+                            class="w-full px-3 py-2 bg-transparent text-green-400 font-mono text-sm outline-none">
+                        <button onclick="copyToClipboard()" 
+                            class="p-2.5 bg-gray-700 hover:bg-gray-600 rounded-lg transition text-white flex items-center gap-2 shadow-sm" title="Copy">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
+                            <span id="copyBtnText" class="text-xs font-medium hidden sm:inline">Copy</span>
+                        </button>
+                    </div>
+                    <div id="copyMessage" class="text-green-500 text-xs mt-1 text-center hidden font-medium">✨ Copied to clipboard!</div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl w-fit mx-auto shadow-xl transform hover:scale-105 transition duration-300">
+                    <div id="qrcode"></div>
+                </div>
+                <p id="qrInfo" class="text-center text-gray-500 text-xs">Scan with your phone</p>
+            </div>
+            
+            <div id="errorMessage" class="hidden mt-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm text-center fade-in"></div>
+        </div>
+    </main>
+
+    <footer class="absolute bottom-6 text-gray-600 text-sm font-medium">
+        <span class="opacity-50">Backend by Spring Boot & Render</span>
+    </footer>
+
+    <script>
+
+        const API_BASE_URL = 'https://s.berkk.cloud'; 
+
+        const translations = {
+            en: {
+                subtitle: "Shorten links, generate QR codes, share instantly.",
+                urlLabel: "Long URL",
+                placeholder: "https://example.com/very-long-link...",
+                btnText: "Shorten & Create QR",
+                processing: "Processing...",
+                resultLabel: "Your Short Link:",
+                copyBtnText: "Copy",
+                copyMessage: "✨ Copied to clipboard!",
+                qrInfo: "Scan with your phone",
+                errorMsg: "An error occurred. Please check the URL.",
+                langBtn: "TR"
+            },
+            tr: {
+                subtitle: "Linklerinizi saniyeler içinde kısaltın, QR kodunuzu oluşturun.",
+                urlLabel: "Uzun URL",
+                placeholder: "https://ornek-site.com/cok-uzun-link...",
+                btnText: "Kısalt ve QR Oluştur",
+                processing: "İşleniyor...",
+                resultLabel: "Kısa Linkiniz Hazır:",
+                copyBtnText: "Kopyala",
+                copyMessage: "✨ Panoya kopyalandı!",
+                qrInfo: "Telefonunuzla tarayarak test edin",
+                errorMsg: "Link kısaltılamadı. Lütfen URL'yi kontrol edin.",
+                langBtn: "EN"
+            }
+        };
+
+        let currentLang = 'en'; 
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            const t = translations[lang];
+            
+            document.getElementById('subtitle').textContent = t.subtitle;
+            document.getElementById('urlLabel').textContent = t.urlLabel;
+            document.getElementById('longUrl').placeholder = t.placeholder;
+            document.getElementById('btnText').textContent = t.btnText;
+            document.getElementById('resultLabel').textContent = t.resultLabel;
+            document.getElementById('copyBtnText').textContent = t.copyBtnText;
+            document.getElementById('copyMessage').textContent = t.copyMessage;
+            document.getElementById('qrInfo').textContent = t.qrInfo;
+            
+     
+            const nextLang = lang === 'en' ? 'tr' : 'en';
+            document.getElementById('currentLangFlag').textContent = nextLang === 'en' ? '🇬🇧' : '🇹🇷';
+            document.getElementById('currentLangText').textContent = nextLang.toUpperCase();
+        }
+
+        document.getElementById('langBtn').addEventListener('click', () => {
+            const newLang = currentLang === 'en' ? 'tr' : 'en';
+            setLanguage(newLang);
+        });
+
+        const form = document.getElementById('shortenForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const btnTextSpan = document.getElementById('btnText');
+        const loader = document.getElementById('loader');
+        const resultArea = document.getElementById('resultArea');
+        const shortUrlInput = document.getElementById('shortUrlInput');
+        const errorMessage = document.getElementById('errorMessage');
+        const qrContainer = document.getElementById('qrcode');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            submitBtn.classList.add('hidden');
+            loader.classList.remove('hidden');
+            resultArea.classList.add('hidden');
+            errorMessage.classList.add('hidden');
+            qrContainer.innerHTML = "";
+
+            const longUrl = document.getElementById('longUrl').value;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/shorten`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: longUrl
+                });
+
+                if (!response.ok) throw new Error();
+
+                const data = await response.json();
+                const fullShortUrl = `${API_BASE_URL}/r/${data.shortKey}`;
+                
+                shortUrlInput.value = fullShortUrl;
+                
+                new QRCode(qrContainer, {
+                    text: fullShortUrl,
+                    width: 128,
+                    height: 128,
+                    colorDark : "#000000",
+                    colorLight : "#ffffff",
+                    correctLevel : QRCode.CorrectLevel.H
+                });
+
+                resultArea.classList.remove('hidden');
+
+            } catch (error) {
+                console.error(error);
+                errorMessage.textContent = translations[currentLang].errorMsg;
+                errorMessage.classList.remove('hidden');
+            } finally {
+                loader.classList.add('hidden');
+                submitBtn.classList.remove('hidden');
+            }
+        });
+
+        function copyToClipboard() {
+            shortUrlInput.select();
+            shortUrlInput.setSelectionRange(0, 99999);
+            navigator.clipboard.writeText(shortUrlInput.value).then(() => {
+                const msg = document.getElementById('copyMessage');
+                msg.classList.remove('hidden');
+                setTimeout(() => msg.classList.add('hidden'), 2000);
+            });
+        }
+    </script>
+</body>
+</html>
