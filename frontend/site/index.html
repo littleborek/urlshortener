@@ -191,7 +191,7 @@
                 if (!response.ok) throw new Error();
 
                 const data = await response.json();
-                const fullShortUrl = `${API_BASE_URL}/r/${data.shortKey}`;
+                const fullShortUrl = `${API_BASE_URL}/${data.shortKey}`;
                 
                 shortUrlInput.value = fullShortUrl;
                 
