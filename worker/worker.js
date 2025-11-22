@@ -24,12 +24,7 @@ export default {
       "Strict-Transport-Security": "max-age=63072000; includeSubDomains; preload",
       "X-Content-Type-Options": "nosniff"
     };
-
-    // Redirect root path to the frontend site
-    if (path === "/" || path === "/index.html") {
-        return Response.redirect(FRONTEND_URL, 301);
-    }
-
+    
     // Handle CORS preflight request
     if (request.method === "OPTIONS") {
       return new Response(null, { 
