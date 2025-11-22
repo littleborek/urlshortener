@@ -1,5 +1,55 @@
+// Localization strings
+const translations = {
+    en: {
+        urlLabel: "Current URL",
+        slugBtn: "Custom Slug?",
+        slugLabel: "Custom Slug (Max 15)",
+        copyBtn: "Copy Link",
+        btnText: "Shorten & Create QR",
+        processing: "Processing...",
+        errorMsg: "Error occurred. Check URL.",
+        langBtn: "TR"
+    },
+    tr: {
+        urlLabel: "Mevcut URL",
+        slugBtn: "Özel Bağlantı?",
+        slugLabel: "Özel Bağlantı (Max 15)",
+        copyBtn: "Kopyala",
+        btnText: "Kısalt ve QR Oluştur",
+        processing: "İşleniyor...",
+        errorMsg: "Hata oluştu. URL'yi kontrol edin.",
+        langBtn: "EN"
+    }
+};
+
+let currentLang = 'en';
+
+// Helper function to apply translations
+function setLanguage(lang) {
+    currentLang = lang;
+    const t = translations[lang];
+    
+    document.getElementById('currentUrlLabel').textContent = t.urlLabel;
+    document.getElementById('shortenBtn').textContent = `🚀 ${t.btnText}`;
+    document.getElementById('copyBtn').textContent = t.copyBtn;
+    document.getElementById('customSlugLabel').textContent = t.slugLabel;
+
+    // Update slug toggle button text
+    const toggleBtn = document.getElementById('toggleSlugBtn');
+    if (toggleBtn) {
+        toggleBtn.textContent = document.getElementById('customSlugContainer').classList.contains('hidden') 
+            ? t.slugBtn 
+            : (lang === 'en' ? 'Hide Slug' : 'Linki Gizle');
+    }
+
+    // Update language button text
+    const nextLang = lang === 'en' ? 'tr' : 'en';
+    document.getElementById('currentLangFlag').textContent = nextLang === 'en' ? '🇬🇧' : '🇹🇷';
+    document.getElementById('currentLangText').textContent = nextLang.toUpperCase();
+}
+
+
 document.addEventListener('DOMContentLoaded', async () => {
-    // API endpoint setup
     const API_BASE = "https://s.berkk.cloud";
     
     // Element Definitions
@@ -13,8 +63,32 @@ document.addEventListener('DOMContentLoaded', async () => {
     const shortUrlInput = document.getElementById('shortUrl');
     const qrcodeDiv = document.getElementById('qrcode');
     const statusMsg = document.getElementById('message');
+    const langBtn = document.getElementById('langBtn');
 
-    // 1. Get Current Tab URL using async/await (Requires activeTab permission)
+    // Initialize language
+    setLanguage('en'); 
+    
+    // Language button binding
+    langBtn.addEventListener('click', () => {
+        const newLang = currentLang === 'en' ? 'tr' : 'en';
+        setLanguage(newLang);
+    });
+
+    // Custom Slug Toggle Logic
+    toggleSlugBtn.addEventListener('click', () => {
+        customSlugContainer.classList.toggle('hidden');
+        const isHidden = customSlugContainer.classList.contains('hidden');
+        const t = translations[currentLang];
+
+        if (isHidden) {
+            toggleSlugBtn.textContent = t.slugBtn;
+            customSlugInput.value = ''; // Clear input when hiding
+        } else {
+            toggleSlugBtn.textContent = (currentLang === 'en' ? 'Hide Slug' : 'Linki Gizle');
+        }
+    });
+
+    // 1. Get Current Tab URL using async/await
     try {
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
         if (tab?.url) {
@@ -25,20 +99,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.error("Failed to get current tab URL:", e);
     }
     
-    // Custom Slug Toggle Logic
-    toggleSlugBtn.addEventListener('click', () => {
-        customSlugContainer.classList.toggle('hidden');
-        const isHidden = customSlugContainer.classList.contains('hidden');
-        
-        if (isHidden) {
-            toggleSlugBtn.textContent = 'Custom Slug?';
-            customSlugInput.value = ''; // Clear input when hiding
-        } else {
-            toggleSlugBtn.textContent = 'Hide Slug';
-        }
-    });
-
-
     // 2. Shorten Action (POST JSON Payload)
     shortenBtn.addEventListener('click', async () => {
         const originalUrl = longUrlInput.value;
@@ -61,7 +121,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             const response = await fetch(`${API_BASE}/api/shorten`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' }, // CRITICAL: Send as JSON
+                headers: { 'Content-Type': 'application/json' }, 
                 body: JSON.stringify(payload) 
             });
 
@@ -103,10 +163,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Helper: UI loading state management
     function setLoading(isLoading) {
         if (isLoading) {
-            shortenBtn.textContent = "Processing...";
+            shortenBtn.textContent = translations[currentLang].processing;
             shortenBtn.disabled = true;
         } else {
-            shortenBtn.textContent = "🚀 Shorten & Create QR";
+            shortenBtn.textContent = `🚀 ${translations[currentLang].btnText}`;
             shortenBtn.disabled = false;
         }
     }
