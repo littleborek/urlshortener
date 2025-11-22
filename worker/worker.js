@@ -6,7 +6,6 @@ export default {
     const url = new URL(request.url);
     const path = url.pathname;
 
-
     const corsHeaders = {
       "Access-Control-Allow-Origin": "*", 
       "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
