@@ -5,11 +5,15 @@
 
 // Frontend URL for redirection
 const FRONTEND_URL = "https://short.berkk.cloud"; 
+const SHORT_KEY_LENGTH = 4; // Key length reduced from 6 to 4
 
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const path = url.pathname;
+    
+    // Clean path (remove trailing slash if any)
+    const cleanPath = path.endsWith('/') && path.length > 1 ? path.slice(0, -1) : path;
 
     // CORS and Security Headers
     const corsHeaders = {
@@ -35,7 +39,7 @@ export default {
     }
 
     // Handle POST /api/shorten
-    if (request.method === "POST" && path === "/api/shorten") {
+    if (request.method === "POST" && cleanPath === "/api/shorten") {
       try {
         const longUrl = await request.text();
 
@@ -44,8 +48,8 @@ export default {
           return new Response("Invalid URL", { status: 400, headers: corsHeaders });
         }
 
-        // Generate 6-char key
-        const shortKey = generateRandomString(6);
+        // Generate 4-char key
+        const shortKey = generateRandomString(SHORT_KEY_LENGTH);
         
         // Save to KV store
         await env.LINKS.put(shortKey, longUrl);
@@ -65,9 +69,9 @@ export default {
       }
     }
     
-    // Handle GET /r/{key} redirection
-    if (request.method === "GET" && path.startsWith("/r/")) {
-      const key = path.split("/")[2]; // Extract key
+    // Handle GET /{key} redirection (Key length = 4, so path length = 5: /ABCD)
+    if (request.method === "GET" && cleanPath.length === SHORT_KEY_LENGTH + 1) {
+      const key = cleanPath.slice(1); // Extract key (e.g., /ABCD -> ABCD)
       
       // Get URL from KV store
       const longUrl = await env.LINKS.get(key);
