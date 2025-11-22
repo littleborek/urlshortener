@@ -2,6 +2,11 @@
 
 A robust full-stack link shortening service built with Cloudflare Workers (for high-performance API) and a modern, localized frontend. Includes a custom browser extension for instant link creation.
 
+### 🌐 Live Service & Architecture
+The entire service is deployed and running at: [**short.berkk.cloud**](https://short.berkk.cloud)
+
+This project is a high-performance URL shortening service built using a monorepo structure to integrate a fast, serverless Cloudflare Worker API with a dedicated client-side frontend and a cross-browser extension.
+
 ## 🚀 Key Features
 
 * **Instant Shortening:** Converts long URLs into short, unique keys (e.g., `s.berkk.cloud/KEY`).
