@@ -5,7 +5,7 @@
 
 // Frontend URL for redirection
 const FRONTEND_URL = "https://short.berkk.cloud"; 
-const SHORT_KEY_LENGTH = 4; // Key length reduced from 6 to 4
+const SHORT_KEY_LENGTH = 4; // Key length reduced to 4
 
 export default {
   async fetch(request, env, ctx) {
@@ -70,6 +70,7 @@ export default {
     }
     
     // Handle GET /{key} redirection (Key length = 4, so path length = 5: /ABCD)
+    // Worker now listens on the root path for 4-character keys
     if (request.method === "GET" && cleanPath.length === SHORT_KEY_LENGTH + 1) {
       const key = cleanPath.slice(1); // Extract key (e.g., /ABCD -> ABCD)
       
