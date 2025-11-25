@@ -51,6 +51,8 @@ function setLanguage(lang) {
 
 document.addEventListener('DOMContentLoaded', async () => {
     const API_BASE = "https://s.berkk.cloud";
+    const SHORT_LINK = "s.berkk.cloud";
+
     
     // Element Definitions
     const longUrlInput = document.getElementById('currentUrl');
@@ -135,7 +137,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
             const data = await response.json();
-            const fullShortUrl = `${API_BASE}/${data.shortKey}`;
+            const fullShortUrl = `${SHORT_LINK}/${data.shortKey}`;
 
             showResult(fullShortUrl);
 
